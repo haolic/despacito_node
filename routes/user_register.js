@@ -1,31 +1,38 @@
 let express = require('express');
 let router = express.Router();
 let MongoClient = require('mongodb').MongoClient;
+
 let url = 'mongodb://localhost:27017/despacito';
 
 router.post('/', (req, res, next) => {
     MongoClient.connect(url, (err, db) => {
-        if (err) throw err;
-        let dbo = db.db('despacito');
-        // let findResult = dbo.collection('user_main').find({ userName: req.body.userNameReg });
-        console.log(11, dbo.collection('user_main'));
-        if (false) {
-            let insertData = {
-                userName: req.body.userNameReg,
-                password: req.body.passwordReg,
-            }
-            dbo.collection('user_main').insertOne(insertData, (err, _res) => {
+        if (!err) {
+            console.log('Connected successfully to despacito');
+            let collection = db.collection('user_main');
+            collection.find({
+                userName: req.body.userNameReg
+            }).toArray((err, doc) => {
+                console.log("查询结果", doc);
                 if (err) throw err;
-                let successData = { code: 1, msg: "注册成功" };
-                res.json(successData);
-                console.log('文档插入成功');
-                db.close();
-            });
+                if (doc.length) {
+                    res.json({ code: 0, msg: "用户名已存在" });
+                    db.close();
+                } else {
+                    collection.insertOne(req.body, (err, result) => {
+                        if (err) throw err;
+                        res.json({
+                            code: 1,
+                            msg: '注册成功'
+                        })
+                        console.log("创建用户成功");
+                        db.close();
+                    })
+                }
+            })
         } else {
-            let successData = { code: 0, msg: "用户名已存在" };
-            res.json(successData);
+            throw err;
         }
-    });
+    })
 });
 
 module.exports = router;
