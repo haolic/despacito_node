@@ -1,32 +1,25 @@
 let express = require('express');
 let router = express.Router();
 let MongoClient = require('mongodb').MongoClient;
-
 let url = require('./dburl');
 
 router.post('/', (req, res, next) => {
     MongoClient.connect(url, (err, db) => {
         if (!err) {
-            console.log('Connected successfully to despacito');
+            console.log('数据库 despacito 连接成功');
             let collection = db.collection('user_main');
             collection.find({
-                userName: req.body.userNameReg
+                userName: req.body.userName,
+                password: req.body.password,
             }).toArray((err, doc) => {
                 console.log("查询结果", doc);
                 if (err) throw err;
                 if (doc.length) {
-                    res.json({ code: 0, msg: "用户名已存在" });
+                    res.json({ code: 1, msg: "登录成功" });
                     db.close();
                 } else {
-                    collection.insertOne(req.body, (err, result) => {
-                        if (err) throw err;
-                        res.json({
-                            code: 1,
-                            msg: '注册成功'
-                        })
-                        console.log("创建用户成功");
-                        db.close();
-                    })
+                    res.json({ code: 0, msg: "用户名或密码错误" });
+                    db.close();
                 }
             })
         } else {
